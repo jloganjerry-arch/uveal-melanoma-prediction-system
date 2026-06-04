@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+
+<body>
+    <select id="param-sex">
+        <option value="" disabled selected>-- Choose Sex --</option>
+        <option value="0">0 (Male)</option>
+        <option value="1">1 (Female)</option>
+    </select>
+    <script>
+        const sel = document.getElementById('param-sex');
+        Array.from(sel.options).forEach(opt => {
+            if (!opt.disabled) opt.setAttribute('data-full', opt.text);
+        });
+
+        // mousedown fires before the native dropdown opens on desktop
+        sel.addEventListener('mousedown', () => {
+            Array.from(sel.options).forEach(opt => {
+                if (opt.hasAttribute('data-full')) opt.text = opt.getAttribute('data-full');
+            });
+        });
+
+        sel.addEventListener('blur', () => {
+            if (sel.selectedIndex > 0) {
+                sel.options[sel.selectedIndex].text = sel.value;
+            }
+        });
+
+        sel.addEventListener('change', () => {
+            if (sel.selectedIndex > 0) {
+                sel.options[sel.selectedIndex].text = sel.value;
+            }
+        });
+    </script>
+</body>
+
+</html>

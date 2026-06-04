@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Uveal Melanoma Prognosticator Online</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f6f8;
+    --surface: #ffffff;
+    --surface2: #f0f2f5;
+    --border: #e2e5ea;
+    --border2: #c9cdd5;
+    --text: #1a1d23;
+    --text2: #5a6070;
+    --text3: #9aa0ae;
+    --blue: #2563eb;
+    --blue-bg: #eff4ff;
+    --blue-text: #1e40af;
+    --red: #dc2626;
+    --red-bg: #fef2f2;
+    --amber: #d97706;
+    --amber-bg: #fffbeb;
+    --green: #16a34a;
+    --green-bg: #f0fdf4;
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* Top bar */
+  .topbar {
+    background: #1a2540;
+    color: #fff;
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 52px;
+  }
+  .topbar-brand { font-size: 16px; font-weight: 600; letter-spacing: 0.01em; }
+  .topbar-brand span { color: #7eb3ff; }
+  .topbar-version { font-size: 12px; color: #8da0c0; }
+
+  /* Layout */
+  .wrapper { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.5rem 3rem; }
+
+  .page-title { font-size: 22px; font-weight: 600; margin-bottom: 4px; color: var(--text); }
+  .page-subtitle { font-size: 13px; color: var(--text2); margin-bottom: 1.25rem; }
+
+  .disclaimer {
+    background: var(--amber-bg);
+    border: 1px solid #fcd34d;
+    border-left: 4px solid var(--amber);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    font-size: 12.5px;
+    color: #78350f;
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+  }
+  .disclaimer strong { font-weight: 600; }
+
+  /* Card */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+  .card-title {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text3);
+    margin-bottom: 1rem;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* Grid layouts */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .grid4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; }
+
+  @media (max-width: 700px) {
+    .grid2, .grid3, .grid4 { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 460px) {
+    .grid2, .grid3, .grid4 { grid-template-columns: 1fr; }
+  }
+
+  /* Form fields */
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field label { font-size: 12px; font-weight: 500; color: var(--text2); }
+  .field input,
+  .field select {
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 7px 10px;
+    font-size: 13px;
+    color: var(--text);
+    background: #fff;
+    height: 36px;
+    transition: border-color 0.15s;
+  }
+  .field input:focus,
+  .field select:focus {
+    outline: none;
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+  }
+  .field .hint { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+  /* Calculate button */
+  .btn-calc {
+    display: block;
+    width: 100%;
+    background: #1a2540;
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    padding: 12px 24px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 1.25rem;
+    letter-spacing: 0.02em;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .btn-calc:hover { background: #253060; }
+  .btn-calc:active { transform: scale(0.99); }
+
+  /* Results */
+  .results { display: none; }
+  .results.show { display: block; }
+
+  .section-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 1.75rem 0 1.25rem;
+  }
+
+  .results-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 1.25rem;
+    color: var(--text);
+  }
+
+  /* TNM badges */
+  .tnm-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 1.25rem; }
+  .tnm-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 7px 14px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .tnm-badge .tnm-key {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .tnm-badge.stage { background: #1a2540; color: #fff; border-color: #1a2540; }
+  .tnm-badge.stage .tnm-key { color: #8da0c0; }
+
+  /* Stat cards */
+  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 1.25rem; }
+  @media (max-width: 700px) { .stat-grid { grid-template-columns: 1fr 1fr; } }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 14px 16px;
+  }
+  .stat-card .s-label { font-size: 11px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .stat-card .s-value { font-size: 26px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+  .stat-card .s-desc { font-size: 11px; color: var(--text2); line-height: 1.4; }
+  .stat-card.blue .s-value { color: var(--blue); }
+  .stat-card.red .s-value { color: var(--red); }
+  .stat-card.amber .s-value { color: var(--amber); }
+  .stat-card.green .s-value { color: var(--green); }
+
+  /* Chart */
+  .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; }
+  .chart-header { font-size: 13px; font-weight: 500; color: var(--text2); margin-bottom: 1rem; }
+  .chart-wrap { position: relative; height: 260px; }
+  .chart-legend { display: flex; gap: 1.25rem; flex-wrap: wrap; margin-top: 12px; }
+  .leg-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text2); }
+  .leg-dot { width: 14px; height: 3px; border-radius: 2px; flex-shrink: 0; }
+
+  /* Table */
+  .table-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 1.25rem; }
+  .table-card table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  .table-card thead th {
+    background: var(--surface2);
+    padding: 9px 12px;
+    text-align: center;
+    font-weight: 600;
+    color: var(--text2);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--border);
+  }
+  .table-card thead th:first-child { text-align: left; }
+  .table-card tbody td {
+    padding: 8px 12px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+  .table-card tbody td:first-child { text-align: left; font-weight: 500; color: var(--text2); }
+  .table-card tbody tr:last-child td { border-bottom: none; }
+  .table-card tbody tr:hover td { background: var(--surface2); }
+
+  /* Risk bar */
+  .risk-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; }
+  .risk-row { margin-bottom: 14px; }
+  .risk-row:last-child { margin-bottom: 0; }
+  .risk-top { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px; }
+  .risk-top .risk-name { color: var(--text2); font-weight: 500; }
+  .risk-top .risk-val { font-weight: 700; color: var(--text); }
+  .risk-bar-bg { height: 8px; border-radius: 4px; background: var(--surface2); overflow: hidden; }
+  .risk-bar-fill { height: 100%; border-radius: 4px; transition: width 0.8s cubic-bezier(0.25,0.46,0.45,0.94); }
+  .risk-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-top: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .risk-badge.low { background: var(--green-bg); color: var(--green); }
+  .risk-badge.mid { background: var(--amber-bg); color: var(--amber); }
+  .risk-badge.high { background: var(--red-bg); color: var(--red); }
+
+  /* Genomic flags */
+  .flags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .flag {
+    display: flex; align-items: center; gap: 5px;
+    padding: 4px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 500;
+  }
+  .flag.warn { background: var(--red-bg); color: var(--red); border: 1px solid #fca5a5; }
+  .flag.ok { background: var(--green-bg); color: var(--green); border: 1px solid #86efac; }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 2.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border);
+    line-height: 1.8;
+  }
+  footer a { color: var(--blue); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  /* Print styles */
+  @media print {
+    .topbar, .btn-calc { display: none; }
+    .results { display: block !important; }
+    body { background: #fff; }
+    .card, .chart-card, .risk-section, .table-card { border: 1px solid #ccc; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-brand"><span>UMPO</span> &mdash; Uveal Melanoma Prognosticator Online</div>
+  <div class="topbar-version">Ver 1.0 &nbsp;|&nbsp; Research Use Only</div>
+</div>
+
+<div class="wrapper">
+
+  <div style="margin-bottom:1.25rem; margin-top:0.75rem;">
+    <div class="page-title">Uveal Melanoma Prognosticator Online</div>
+    <div class="page-subtitle">Individualised survival estimation for choroidal melanoma using an accelerated failure time model</div>
+  </div>
+
+  <div class="disclaimer">
+    <strong>Important Notice:</strong> This tool is intended to provide supplementary information for <strong>education and research purposes only</strong>.
+    It is <strong>not</strong> meant in any way to replace clinical judgement. Survival modelling has been performed using an accelerated failure time model.
+    Results from other patient populations may differ. <strong>Must not be used as a regulated medical device (e.g. in the European Community).</strong>
+  </div>
+
+  <!-- Patient Details -->
+  <div class="card">
+    <div class="card-title">Patient details</div>
+    <div class="grid4">
+      <div class="field"><label>Patient name</label><input type="text" id="pname" placeholder="Optional"></div>
+      <div class="field"><label>Hospital number</label><input type="text" id="hospno" placeholder="Optional"></div>
+      <div class="field"><label>Date</label><input type="date" id="pdate"></div>
+      <div class="field"><label>Practitioner name</label><input type="text" id="prac" placeholder="Optional"></div>
+    </div>
+  </div>
+
+  <!-- Clinical -->
+  <div class="card">
+    <div class="card-title">Clinical parameters</div>
+    <div class="grid3">
+      <div class="field">
+        <label>Age (years)</label>
+        <input type="number" id="age" min="18" max="100" value="60" placeholder="e.g. 60">
+      </div>
+      <div class="field">
+        <label>Sex</label>
+        <select id="sex">
+          <option value="F">Female</option>
+          <option value="M">Male</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Ciliary body involvement</label>
+        <select id="ciliary">
+          <option value="0">No</option>
+          <option value="1">Yes</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Large ultrasound diameter (mm)</label>
+        <input type="number" id="diam" min="1" max="25" step="0.1" value="12.0" placeholder="mm">
+        <span class="hint">1.0 – 25.0 mm</span>
+      </div>
+      <div class="field">
+        <label>Ultrasound thickness (mm)</label>
+        <input type="number" id="thick" min="0.5" max="20" step="0.1" value="5.0" placeholder="mm">
+        <span class="hint">0.5 – 20.0 mm</span>
+      </div>
+      <div class="field">
+        <label>Extraocular extension</label>
+        <select id="extra">
+          <option value="0">No</option>
+          <option value="1">Yes, ≤ 5 mm</option>
+          <option value="2">Yes, &gt; 5 mm</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Histopathological -->
+  <div class="card">
+    <div class="card-title">Histopathological parameters</div>
+    <div class="grid3">
+      <div class="field">
+        <label>Epithelioid cells</label>
+        <select id="epi">
+          <option value="0">No</option>
+          <option value="1">Yes</option>
+          <option value="na">N/A</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Closed PAS +ve loops</label>
+        <select id="loops">
+          <option value="0">No</option>
+          <option value="1">Yes</option>
+          <option value="na">N/A</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Mitotic rate per 40 HPF</label>
+        <select id="mitotic">
+          <option value="0">0–1</option>
+          <option value="1">2–3</option>
+          <option value="2">4–7</option>
+          <option value="3">&gt; 7</option>
+          <option value="na">N/A</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Genetic -->
+  <div class="card">
+    <div class="card-title">Genetic parameters</div>
+    <div class="grid2">
+      <div class="field">
+        <label>Chromosome 3 loss (monosomy 3)</label>
+        <select id="chr3">
+          <option value="0">No</option>
+          <option value="1">Yes</option>
+          <option value="na">N/A</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Chromosome 8q gain</label>
+        <select id="chr8q">
+          <option value="0">No</option>
+          <option value="1">Yes</option>
+          <option value="na">N/A</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Surveillance -->
+  <div class="card">
+    <div class="card-title">Surveillance parameters</div>
+    <div class="grid3">
+      <div class="field">
+        <label>Years since treatment</label>
+        <select id="yrsince">
+          <option value="0">0 – 1</option>
+          <option value="1">1 – 2</option>
+          <option value="2">2 – 3</option>
+          <option value="3">3 – 4</option>
+          <option value="4">4 – 5</option>
+          <option value="5">5 – 6</option>
+          <option value="6">6 – 7</option>
+          <option value="7">7 – 8</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>First scan (years)</label>
+        <select id="scan">
+          <option value="0.5">0.5</option>
+          <option value="1">1.0</option>
+          <option value="1.5">1.5</option>
+          <option value="2">2.0</option>
+          <option value="2.5">2.5</option>
+          <option value="3">3.0</option>
+          <option value="3.5">3.5</option>
+          <option value="4">4.0</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Number needed to scan</label>
+        <select id="nns">
+          <option value="na">N/A</option>
+          <option value="20">20</option>
+          <option value="10">10</option>
+          <option value="5">5</option>
+          <option value="4">4</option>
+          <option value="2">2</option>
+        </select>
+      </div>
+    </div>
+    <div class="grid2" style="margin-top:12px">
+      <div class="field">
+        <label>Regional lymph nodes *</label>
+        <select id="lymph">
+          <option value="0">No</option>
+          <option value="1">Yes</option>
+          <option value="na">N/A</option>
+        </select>
+        <span class="hint">* TNM staging only — no effect on survival curve</span>
+      </div>
+      <div class="field">
+        <label>Distant metastasis *</label>
+        <select id="meta">
+          <option value="0">No</option>
+          <option value="1">Yes</option>
+          <option value="2">Yes, ≤ 3 cm</option>
+          <option value="3">Yes, 3.1 – 8.0 cm</option>
+          <option value="4">Yes, &gt; 8.0 cm</option>
+          <option value="na">N/A</option>
+        </select>
+        <span class="hint">* TNM staging only — no effect on survival curve</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn-calc" onclick="calculate()">&#9654;&nbsp; Calculate Prognosis</button>
+
+  <!-- Results -->
+  <div class="results" id="results">
+    <div class="section-divider"></div>
+    <div class="results-title">Prognostic results</div>
+
+    <!-- TNM -->
+    <div class="card-title" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--text3);margin-bottom:10px;">TNM staging</div>
+    <div class="tnm-row" id="tnmRow"></div>
+
+    <!-- Stat cards -->
+    <div class="stat-grid" id="statGrid"></div>
+
+    <!-- Survival chart -->
+    <div class="chart-card">
+      <div class="chart-header">Estimated overall survival after treatment for choroidal melanoma &mdash; MAM: Metastatic-Associated Mortality &nbsp;·&nbsp; OCM: Other Causes Mortality</div>
+      <div class="chart-wrap"><canvas id="survChart"></canvas></div>
+      <div class="chart-legend">
+        <div class="leg-item"><div class="leg-dot" style="background:#2563eb"></div>Alive (all-cause survival)</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#dc2626"></div>MAM – Metastatic-associated mortality</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#d97706"></div>OCM – Other causes mortality</div>
+      </div>
+    </div>
+
+    <!-- Year-by-year table -->
+    <div class="card-title" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--text3);margin-bottom:10px;">Year-by-year breakdown</div>
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr>
+            <th>Metric</th>
+            <th>Yr 1</th><th>Yr 2</th><th>Yr 3</th><th>Yr 4</th><th>Yr 5</th>
+            <th>Yr 6</th><th>Yr 7</th><th>Yr 8</th><th>Yr 9</th><th>Yr 10</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+
+    <!-- Risk bars -->
+    <div class="card-title" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--text3);margin-bottom:10px;margin-top:1.25rem;">Risk stratification</div>
+    <div class="risk-section">
+      <div id="riskContent"></div>
+    </div>
+
+    <!-- Print -->
+    <div style="text-align:right;margin-top:1rem">
+      <button onclick="window.print()" style="background:none;border:1px solid var(--border2);border-radius:var(--radius);padding:7px 16px;font-size:13px;cursor:pointer;color:var(--text2)">&#128438;&nbsp; Print / Save PDF</button>
+    </div>
+  </div>
+
+  <footer>
+    <p>Reference: A. Eleuteri, A.F.G. Taktak, S.E. Coupland, H. Heimann, H. Kalirai, B.E. Damato (2018).</p>
+    <p>Prognostication of metastatic death in uveal melanoma patients: A Markov multi-state model. <em>Comp Biol Med</em>, 102, pp 151–156.</p>
+    <p style="margin-top:6px">
+      <a href="#">Home</a> &nbsp;|&nbsp;
+      <a href="#">Terms &amp; Conditions</a> &nbsp;|&nbsp;
+      <a href="#">Privacy</a> &nbsp;|&nbsp;
+      <a href="#">Background</a> &nbsp;|&nbsp;
+      <a href="#">Contact us</a>
+    </p>
+    <p style="margin-top:6px;color:#c0c8d5">For research &amp; education purposes only &mdash; not for clinical decision-making</p>
+  </footer>
+
+</div><!-- /wrapper -->
+
+<script>
+let chartInstance = null;
+
+function calculate() {
+  const age     = parseFloat(document.getElementById('age').value)   || 60;
+  const sex     = document.getElementById('sex').value;
+  const diam    = parseFloat(document.getElementById('diam').value)  || 12;
+  const thick   = parseFloat(document.getElementById('thick').value) || 5;
+  const ciliary = parseInt(document.getElementById('ciliary').value) || 0;
+  const extra   = parseInt(document.getElementById('extra').value)   || 0;
+  const epi     = document.getElementById('epi').value;
+  const loops   = document.getElementById('loops').value;
+  const mitotic = document.getElementById('mitotic').value;
+  const chr3    = document.getElementById('chr3').value;
+  const chr8q   = document.getElementById('chr8q').value;
+  const lymph   = document.getElementById('lymph').value;
+  const meta    = document.getElementById('meta').value;
+
+  /* -------------------------------------------------------
+     Simplified AFT-inspired risk model
+     (Replace coefficients with validated LUMPO III values
+      for clinical/research use)
+  ------------------------------------------------------- */
+  let rs = 0;
+  rs += (age - 50) * 0.020;
+  if (sex === 'M')   rs += 0.15;
+  rs += (diam - 10) * 0.052;
+  rs += (thick - 5) * 0.068;
+  if (ciliary)       rs += 0.25;
+  if (extra === 1)   rs += 0.30;
+  if (extra === 2)   rs += 0.55;
+  if (epi    === '1') rs += 0.35;
+  if (loops  === '1') rs += 0.25;
+  if (mitotic === '1') rs += 0.15;
+  if (mitotic === '2') rs += 0.30;
+  if (mitotic === '3') rs += 0.52;
+  if (chr3   === '1') rs += 0.60;
+  if (chr8q  === '1') rs += 0.30;
+  if (chr3   === '1' && chr8q === '1') rs += 0.22;
+
+  const baseMam = Math.min(0.88, Math.max(0.02, 0.10 + rs * 0.17));
+  const baseOcm = Math.max(0.01, 0.014 * (age / 50));
+
+  /* Build year-by-year arrays */
+  const years = [1,2,3,4,5,6,7,8,9,10];
+  const alive = [], mam = [], ocm = [];
+  for (const y of years) {
+    const mamY  = Math.min(0.92, baseMam * (1 - Math.exp(-0.36 * y)));
+    const ocmY  = Math.min(0.28, baseOcm * y * 0.82);
+    const aliveY = Math.max(0, 1 - mamY - ocmY);
+    alive.push(+(aliveY * 100).toFixed(1));
+    mam.push(+(mamY   * 100).toFixed(1));
+    ocm.push(+(ocmY   * 100).toFixed(1));
+  }
+
+  /* TNM staging */
+  let T = 'T1';
+  if      (diam <= 3  && thick <= 1.5) T = 'T1a';
+  else if (diam <= 3)                  T = 'T1b';
+  else if (diam <= 9  && thick <= 3)   T = 'T2a';
+  else if (diam <= 12)                 T = 'T2b';
+  else if (diam <= 18)                 T = 'T3';
+  else                                 T = 'T4';
+
+  const N = (lymph === '1') ? 'N1' : 'N0';
+  const M = (meta !== '0' && meta !== 'na') ? 'M1' : 'M0';
+  const stageMap = { 'T1a':'I','T1b':'I','T2a':'IIA','T2b':'IIB','T3':'IIIA','T4':'IIIB' };
+  let stg = stageMap[T] || 'II';
+  if (M === 'M1') stg = 'IV';
+
+  /* ------ Update DOM ------ */
+
+  // TNM
+  document.getElementById('tnmRow').innerHTML =
+    `<div class="tnm-badge"><span class="tnm-key">T &nbsp;</span>${T}</div>
+     <div class="tnm-badge"><span class="tnm-key">N &nbsp;</span>${N}</div>
+     <div class="tnm-badge"><span class="tnm-key">M &nbsp;</span>${M}</div>
+     <div class="tnm-badge stage"><span class="tnm-key">Stage &nbsp;</span>${stg}</div>`;
+
+  // Stat cards
+  document.getElementById('statGrid').innerHTML =
+    `<div class="stat-card blue">
+       <div class="s-label">5-year survival</div>
+       <div class="s-value">${alive[4]}%</div>
+       <div class="s-desc">Overall all-cause survival</div>
+     </div>
+     <div class="stat-card red">
+       <div class="s-label">5-year MAM</div>
+       <div class="s-value">${mam[4]}%</div>
+       <div class="s-desc">Metastatic-associated mortality</div>
+     </div>
+     <div class="stat-card amber">
+       <div class="s-label">10-year survival</div>
+       <div class="s-value">${alive[9]}%</div>
+       <div class="s-desc">Overall all-cause survival</div>
+     </div>
+     <div class="stat-card green">
+       <div class="s-label">10-year OCM</div>
+       <div class="s-value">${ocm[9]}%</div>
+       <div class="s-desc">Other causes mortality</div>
+     </div>`;
+
+  // Table rows
+  const rowData = [
+    { label: 'All-cause survival (%)', data: alive },
+    { label: 'MAM (%)',                data: mam   },
+    { label: 'Other causes (%)',       data: ocm   }
+  ];
+  document.getElementById('tableBody').innerHTML = rowData.map(r =>
+    `<tr><td>${r.label}</td>${r.data.map(v => `<td>${v.toFixed(1)}</td>`).join('')}</tr>`
+  ).join('');
+
+  // Chart
+  const ctx = document.getElementById('survChart').getContext('2d');
+  if (chartInstance) chartInstance.destroy();
+  chartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: years.map(y => 'Yr ' + y),
+      datasets: [
+        {
+          label: 'Alive',
+          data: alive,
+          borderColor: '#2563eb',
+          backgroundColor: 'rgba(37,99,235,0.06)',
+          fill: true, tension: 0.4, pointRadius: 4,
+          pointBackgroundColor: '#2563eb', borderWidth: 2.5
+        },
+        {
+          label: 'MAM',
+          data: mam,
+          borderColor: '#dc2626',
+          backgroundColor: 'rgba(220,38,38,0.05)',
+          fill: true, tension: 0.4, pointRadius: 4,
+          pointBackgroundColor: '#dc2626', borderWidth: 2
+        },
+        {
+          label: 'OCM',
+          data: ocm,
+          borderColor: '#d97706',
+          backgroundColor: 'rgba(217,119,6,0.05)',
+          fill: true, tension: 0.4, pointRadius: 4,
+          pointBackgroundColor: '#d97706', borderWidth: 2
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: c => c.dataset.label + ': ' + c.parsed.y.toFixed(1) + '%'
+          }
+        }
+      },
+      scales: {
+        y: {
+          min: 0, max: 100,
+          ticks: { callback: v => v + '%', font: { size: 11 } },
+          grid: { color: 'rgba(0,0,0,0.05)' },
+          title: { display: true, text: 'Probability (%)', font: { size: 11 }, color: '#888' }
+        },
+        x: {
+          ticks: { font: { size: 11 } },
+          grid: { color: 'rgba(0,0,0,0.05)' }
+        }
+      }
+    }
+  });
+
+  // Risk bars
+  const mamPct = Math.min(99, Math.round(baseMam * 100));
+  const riskLabel = mamPct < 25 ? 'Low' : mamPct < 55 ? 'Intermediate' : 'High';
+  const riskClass = mamPct < 25 ? 'low' : mamPct < 55 ? 'mid' : 'high';
+  const barColor  = mamPct < 25 ? '#16a34a' : mamPct < 55 ? '#d97706' : '#dc2626';
+
+  const genomicFlags = [];
+  if (chr3  === '1') genomicFlags.push('<span class="flag warn">&#9679; Monosomy 3 detected</span>');
+  if (chr8q === '1') genomicFlags.push('<span class="flag warn">&#9679; Chr 8q gain</span>');
+  if (chr3  === '1' && chr8q === '1') genomicFlags.push('<span class="flag warn">&#9679; Combined Chr3 + 8q — worst prognosis</span>');
+  if (chr3  === '0' && chr8q === '0') genomicFlags.push('<span class="flag ok">&#9679; No chromosomal abnormalities detected</span>');
+
+  document.getElementById('riskContent').innerHTML =
+    `<div class="risk-row">
+       <div class="risk-top">
+         <span class="risk-name">Overall metastatic risk (5-year MAM estimate)</span>
+         <span class="risk-val">${mamPct}%</span>
+       </div>
+       <div class="risk-bar-bg">
+         <div class="risk-bar-fill" style="width:${mamPct}%;background:${barColor}"></div>
+       </div>
+     </div>
+     <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+       <div>Risk category: <span class="risk-badge ${riskClass}">${riskLabel}</span></div>
+       <div class="flags">${genomicFlags.join('')}</div>
+     </div>
+     <div style="margin-top:12px;font-size:12px;color:var(--text3)">
+       At 5 years: MAM = ${mam[4]}%, OCM = ${ocm[4]}%, chance of survival = ${alive[4]}%<br>
+       At 10 years: MAM = ${mam[9]}%, OCM = ${ocm[9]}%, chance of survival = ${alive[9]}%
+     </div>`;
+
+  // Show results
+  const resultsEl = document.getElementById('results');
+  resultsEl.classList.add('show');
+  setTimeout(() => resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+}
+
+// Set today's date
+document.getElementById('pdate').value = new Date().toISOString().split('T')[0];
+</script>
+
+</body>
+</html>
