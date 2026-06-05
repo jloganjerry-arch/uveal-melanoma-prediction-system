@@ -60,18 +60,18 @@
         }
 
         .fade-in {
-            animation: fadeIn 0.6s ease-out forwards;
+            animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
         @keyframes fadeIn {
             from {
                 opacity: 0;
-                transform: translateY(10px);
+                transform: translateY(20px) scale(0.98);
             }
 
             to {
                 opacity: 1;
-                transform: translateY(0);
+                transform: translateY(0) scale(1);
             }
         }
 
@@ -81,41 +81,114 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, var(--primary-dark) 0%, #1a202c 100%);
+            background: linear-gradient(135deg, var(--primary-dark) 0%, #090e1a 100%);
             position: relative;
             overflow: hidden;
         }
 
-        /* Decorative background circle */
+        /* Decorative background circle 1 - Golden Pulse */
         #login-view::before {
             content: '';
             position: absolute;
             width: 600px;
             height: 600px;
-            background: radial-gradient(circle, rgba(197, 160, 89, 0.1) 0%, rgba(15, 23, 42, 0) 70%);
+            background: radial-gradient(circle, rgba(197, 160, 89, 0.12) 0%, rgba(15, 23, 42, 0) 70%);
             border-radius: 50%;
-            top: 50%;
-            left: 50%;
+            top: 40%;
+            left: 30%;
             transform: translate(-50%, -50%);
             pointer-events: none;
+            animation: pulseCircle1 16s infinite alternate ease-in-out;
+            z-index: 2;
         }
 
+        /* Decorative background circle 2 - Navy Pulse */
+        #login-view::after {
+            content: '';
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0) 75%);
+            border-radius: 50%;
+            top: 60%;
+            left: 70%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            animation: pulseCircle2 20s infinite alternate ease-in-out;
+            z-index: 2;
+        }
+
+        @keyframes pulseCircle1 {
+            0% {
+                transform: translate(-50%, -50%) scale(1) translate(0, 0);
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1.15) translate(50px, -30px);
+            }
+        }
+
+        @keyframes pulseCircle2 {
+            0% {
+                transform: translate(-50%, -50%) scale(1) translate(0, 0);
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(0.9) translate(-40px, 40px);
+            }
+        }
+
+        /* Glassmorphism Login Card with Entrance Animation */
         .login-card {
-            background: var(--white);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             padding: 3rem;
-            border-radius: 8px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.6);
             width: 100%;
             max-width: 420px;
             text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.25);
             border-top: 4px solid var(--accent-gold);
             z-index: 10;
+            transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1), box-shadow 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+
+        .login-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 30px 50px rgba(0, 0, 0, 0.4), 0 0 15px rgba(197, 160, 89, 0.15);
+        }
+
+        /* Staggered entrance animation for login-card children */
+        .login-card > * {
+            opacity: 0;
+            transform: translateY(15px);
+            animation: slideUpFadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .login-card > .login-logo {
+            animation-delay: 0.1s;
+        }
+
+        .login-card > .login-subtitle {
+            animation-delay: 0.22s;
+        }
+
+        .login-card > #login-form {
+            animation-delay: 0.35s;
+        }
+
+        @keyframes slideUpFadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .login-logo {
             font-size: 2.5rem;
             margin-bottom: 0.5rem;
             color: var(--primary-dark);
+            font-weight: 600;
         }
 
         .login-subtitle {
@@ -148,15 +221,21 @@
             border: 1px solid #cbd5e1;
             border-radius: 4px;
             background-color: #f8fafc;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
             font-family: 'Lato', sans-serif;
+        }
+
+        .form-control:hover:not(:focus) {
+            border-color: #94a3b8;
+            background-color: #f1f5f9;
         }
 
         .form-control:focus {
             outline: none;
             border-color: var(--accent-gold);
             background-color: var(--white);
-            box-shadow: 0 0 0 3px rgba(197, 160, 89, 0.1);
+            box-shadow: 0 0 0 4px rgba(197, 160, 89, 0.12);
+            transform: translateY(-1px);
         }
 
         .btn-royal {
@@ -171,15 +250,26 @@
             cursor: pointer;
             text-transform: uppercase;
             letter-spacing: 1px;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
             margin-top: 1rem;
+            position: relative;
+            overflow: hidden;
         }
 
         .btn-royal:hover {
             background-color: var(--accent-gold);
             color: var(--primary-dark);
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(197, 160, 89, 0.3);
+            animation: btnPulse 1.5s infinite alternate ease-in-out;
+        }
+
+        @keyframes btnPulse {
+            0% {
+                box-shadow: 0 4px 12px rgba(197, 160, 89, 0.3);
+            }
+            100% {
+                box-shadow: 0 4px 20px rgba(197, 160, 89, 0.6), 0 0 10px rgba(197, 160, 89, 0.3);
+            }
         }
 
         /* --- DASHBOARD STYLES --- */
@@ -1580,7 +1670,137 @@
         }
 
         // Initialize masking on load
-        document.addEventListener('DOMContentLoaded', applySelectMasking);
+        document.addEventListener('DOMContentLoaded', () => {
+            applySelectMasking();
+            
+            // --- Live Interactive Canvas Particles Background Animation ---
+            (function() {
+                const loginView = document.getElementById('login-view');
+                if (!loginView) return;
+                
+                const canvas = document.createElement('canvas');
+                canvas.id = 'login-bg-canvas';
+                canvas.style.position = 'absolute';
+                canvas.style.top = '0';
+                canvas.style.left = '0';
+                canvas.style.width = '100%';
+                canvas.style.height = '100%';
+                canvas.style.pointerEvents = 'none';
+                canvas.style.zIndex = '1';
+                loginView.appendChild(canvas);
+                
+                const ctx = canvas.getContext('2d');
+                let width = canvas.width = loginView.clientWidth;
+                let height = canvas.height = loginView.clientHeight;
+                
+                window.addEventListener('resize', () => {
+                    width = canvas.width = loginView.clientWidth;
+                    height = canvas.height = loginView.clientHeight;
+                });
+                
+                const particles = [];
+                // Dynamic count based on screen size
+                const maxParticles = Math.min(80, Math.floor((width * height) / 18000));
+                const mouse = { x: null, y: null, radius: 150 };
+                
+                loginView.addEventListener('mousemove', (e) => {
+                    const rect = loginView.getBoundingClientRect();
+                    mouse.x = e.clientX - rect.left;
+                    mouse.y = e.clientY - rect.top;
+                });
+                
+                loginView.addEventListener('mouseleave', () => {
+                    mouse.x = null;
+                    mouse.y = null;
+                });
+                
+                class Particle {
+                    constructor() {
+                        this.reset();
+                    }
+                    
+                    reset() {
+                        this.x = Math.random() * width;
+                        this.y = Math.random() * height;
+                        this.vx = (Math.random() - 0.5) * 0.35;
+                        this.vy = (Math.random() - 0.5) * 0.35;
+                        this.radius = Math.random() * 2 + 1;
+                        this.color = Math.random() > 0.45 ? 'rgba(197, 160, 89, 0.22)' : 'rgba(148, 163, 184, 0.15)';
+                    }
+                    
+                    update() {
+                        this.x += this.vx;
+                        this.y += this.vy;
+                        
+                        // Wrap around borders gently
+                        if (this.x < 0) this.x = width;
+                        if (this.x > width) this.x = 0;
+                        if (this.y < 0) this.y = height;
+                        if (this.y > height) this.y = 0;
+                        
+                        // Interactive mouse push
+                        if (mouse.x !== null && mouse.y !== null) {
+                            const dx = this.x - mouse.x;
+                            const dy = this.y - mouse.y;
+                            const dist = Math.sqrt(dx*dx + dy*dy);
+                            if (dist < mouse.radius) {
+                                const force = (mouse.radius - dist) / mouse.radius;
+                                this.x += (dx / dist) * force * 0.6;
+                                this.y += (dy / dist) * force * 0.6;
+                            }
+                        }
+                    }
+                    
+                    draw() {
+                        ctx.beginPath();
+                        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                        ctx.fillStyle = this.color;
+                        ctx.fill();
+                    }
+                }
+                
+                for (let i = 0; i < maxParticles; i++) {
+                    particles.push(new Particle());
+                }
+                
+                function animate() {
+                    // Only run animation when login-view is active/visible
+                    if (loginView.classList.contains('hidden')) {
+                        requestAnimationFrame(animate);
+                        return;
+                    }
+                    
+                    ctx.clearRect(0, 0, width, height);
+                    
+                    for (let i = 0; i < particles.length; i++) {
+                        const p1 = particles[i];
+                        p1.update();
+                        p1.draw();
+                        
+                        for (let j = i + 1; j < particles.length; j++) {
+                            const p2 = particles[j];
+                            const dx = p1.x - p2.x;
+                            const dy = p1.y - p2.y;
+                            const dist = Math.sqrt(dx*dx + dy*dy);
+                            
+                            if (dist < 130) {
+                                const alpha = (130 - dist) / 130 * 0.12;
+                                ctx.beginPath();
+                                ctx.moveTo(p1.x, p1.y);
+                                ctx.lineTo(p2.x, p2.y);
+                                ctx.strokeStyle = `rgba(197, 160, 89, ${alpha})`;
+                                ctx.lineWidth = 0.8;
+                                ctx.stroke();
+                            }
+                        }
+                    }
+                    
+                    requestAnimationFrame(animate);
+                }
+                
+                animate();
+            })();
+        });
     </script>
 </body>
 
