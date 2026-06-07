@@ -282,27 +282,35 @@
 
         /* Sidebar */
         .sidebar {
-            width: 260px;
+            width: 280px;
             background-color: var(--primary-dark);
             color: var(--white);
             display: flex;
             flex-direction: column;
-            padding: 2rem;
+            padding: 2rem 0.75rem;
             box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
         }
 
         .sidebar-brand {
             font-family: 'Playfair Display', serif;
-            font-size: 1.5rem;
+            font-size: 1.6rem;
             color: var(--accent-gold);
-            margin-bottom: 3rem;
+            margin-bottom: 2.5rem;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            padding-bottom: 1rem;
+            padding: 0 1.25rem 1rem 1.25rem;
+            z-index: 2;
+            position: relative;
+            font-weight: 600;
+            letter-spacing: 0.5px;
         }
 
         .nav-menu {
             list-style: none;
             flex-grow: 1;
+            z-index: 2;
+            position: relative;
         }
 
         .nav-item {
@@ -310,29 +318,42 @@
         }
 
         .nav-link {
-            display: block;
-            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            padding: 0.85rem 1.25rem;
             color: #94a3b8;
             text-decoration: none;
-            border-radius: 4px;
-            transition: all 0.2s;
+            border-radius: 6px;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
             font-size: 0.95rem;
+            font-weight: 500;
+            border-left: 4px solid transparent;
         }
 
-        .nav-link:hover,
-        .nav-link.active {
-            background-color: rgba(255, 255, 255, 0.05);
+        .nav-link:hover {
             color: var(--white);
-            border-left: 3px solid var(--accent-gold);
+            background-color: rgba(255, 255, 255, 0.03);
+            transform: translateX(4px);
+        }
+
+        .nav-link.active {
+            background-color: rgba(197, 160, 89, 0.12);
+            color: var(--white);
+            border-left-color: var(--accent-gold);
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transform: translateX(4px);
         }
 
         .user-profile {
-            padding-top: 1rem;
+            padding: 1.5rem 1.25rem 1rem 1.25rem;
             border-top: 1px solid rgba(255, 255, 255, 0.1);
-            font-size: 0.9rem;
+            font-size: 0.95rem;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            z-index: 2;
+            position: relative;
         }
 
         .logout-btn {
@@ -2241,7 +2262,38 @@
         document.addEventListener('DOMContentLoaded', () => {
             applySelectMasking();
             
-            // --- Live Interactive Canvas Particles Background Animation ---
+            // Shared Helper: ECG heartbeat shape function
+            function getHeartbeatY(xOffset, widthVal) {
+                const progress = xOffset / widthVal;
+                if (progress < 0.2 || progress > 0.45) return 0;
+                
+                // Simple ECG wave model
+                // P wave (small bump)
+                if (progress >= 0.2 && progress < 0.25) {
+                    return Math.sin((progress - 0.2) / 0.05 * Math.PI) * -8;
+                }
+                // Q wave (dip)
+                if (progress >= 0.27 && progress < 0.30) {
+                    return (progress - 0.27) / 0.03 * 10;
+                }
+                // R wave (high spike)
+                if (progress >= 0.30 && progress < 0.34) {
+                    const t = (progress - 0.30) / 0.04;
+                    if (t < 0.5) return 10 - t * 2 * 60; // Up spike
+                    return -50 + (t - 0.5) * 2 * 50; // Down return
+                }
+                // S wave (dip)
+                if (progress >= 0.34 && progress < 0.37) {
+                    return -10 + (progress - 0.34) / 0.03 * 10;
+                }
+                // T wave (medium bump)
+                if (progress >= 0.39 && progress < 0.45) {
+                    return Math.sin((progress - 0.39) / 0.06 * Math.PI) * -15;
+                }
+                return 0;
+            }
+
+            // --- 1. Login Page Background Live Animation ---
             (function() {
                 const loginView = document.getElementById('login-view');
                 if (!loginView) return;
@@ -2266,106 +2318,374 @@
                     height = canvas.height = loginView.clientHeight;
                 });
                 
-                const particles = [];
-                // Dynamic count based on screen size
-                const maxParticles = Math.min(80, Math.floor((width * height) / 18000));
-                const mouse = { x: null, y: null, radius: 150 };
-                
-                loginView.addEventListener('mousemove', (e) => {
-                    const rect = loginView.getBoundingClientRect();
-                    mouse.x = e.clientX - rect.left;
-                    mouse.y = e.clientY - rect.top;
-                });
-                
-                loginView.addEventListener('mouseleave', () => {
-                    mouse.x = null;
-                    mouse.y = null;
-                });
-                
-                class Particle {
-                    constructor() {
-                        this.reset();
-                    }
-                    
-                    reset() {
-                        this.x = Math.random() * width;
-                        this.y = Math.random() * height;
-                        this.vx = (Math.random() - 0.5) * 0.35;
-                        this.vy = (Math.random() - 0.5) * 0.35;
-                        this.radius = Math.random() * 2 + 1;
-                        this.color = Math.random() > 0.45 ? 'rgba(197, 160, 89, 0.45)' : 'rgba(160, 140, 110, 0.35)';
-                    }
-                    
-                    update() {
-                        this.x += this.vx;
-                        this.y += this.vy;
-                        
-                        // Wrap around borders gently
-                        if (this.x < 0) this.x = width;
-                        if (this.x > width) this.x = 0;
-                        if (this.y < 0) this.y = height;
-                        if (this.y > height) this.y = 0;
-                        
-                        // Interactive mouse push
-                        if (mouse.x !== null && mouse.y !== null) {
-                            const dx = this.x - mouse.x;
-                            const dy = this.y - mouse.y;
-                            const dist = Math.sqrt(dx*dx + dy*dy);
-                            if (dist < mouse.radius) {
-                                const force = (mouse.radius - dist) / mouse.radius;
-                                this.x += (dx / dist) * force * 0.6;
-                                this.y += (dy / dist) * force * 0.6;
-                            }
-                        }
-                    }
-                    
-                    draw() {
-                        ctx.beginPath();
-                        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                        ctx.fillStyle = this.color;
-                        ctx.fill();
-                    }
+                const dnaNodes = 35;
+                let dnaRotation = 0;
+
+                let ecgX = 0;
+                const ecgSpeed = 2.5;
+
+                const cells = [];
+                const cellCount = 12;
+                for (let i = 0; i < cellCount; i++) {
+                    cells.push({
+                        x: Math.random() * width,
+                        y: Math.random() * height,
+                        radius: Math.random() * 20 + 8,
+                        vx: (Math.random() - 0.5) * 0.2,
+                        vy: (Math.random() - 0.5) * 0.2,
+                        color: Math.random() > 0.5 ? 'rgba(197, 160, 89, 0.08)' : 'rgba(160, 140, 110, 0.06)'
+                    });
                 }
-                
-                for (let i = 0; i < maxParticles; i++) {
-                    particles.push(new Particle());
-                }
-                
+
                 function animate() {
-                    // Only run animation when login-view is active/visible
                     if (loginView.classList.contains('hidden')) {
                         requestAnimationFrame(animate);
                         return;
                     }
                     
                     ctx.clearRect(0, 0, width, height);
-                    
-                    for (let i = 0; i < particles.length; i++) {
-                        const p1 = particles[i];
-                        p1.update();
-                        p1.draw();
+
+                    // --- Draw Floating Microscopic Cells ---
+                    for (let i = 0; i < cells.length; i++) {
+                        const c = cells[i];
+                        c.x += c.vx;
+                        c.y += c.vy;
+
+                        if (c.x < -c.radius) c.x = width + c.radius;
+                        if (c.x > width + c.radius) c.x = -c.radius;
+                        if (c.y < -c.radius) c.y = height + c.radius;
+                        if (c.y > height + c.radius) c.y = -c.radius;
+
+                        // Draw organic cell body
+                        ctx.beginPath();
+                        ctx.arc(c.x, c.y, c.radius, 0, Math.PI * 2);
+                        ctx.fillStyle = c.color;
+                        ctx.fill();
                         
-                        for (let j = i + 1; j < particles.length; j++) {
-                            const p2 = particles[j];
-                            const dx = p1.x - p2.x;
-                            const dy = p1.y - p2.y;
-                            const dist = Math.sqrt(dx*dx + dy*dy);
+                        // Faint outline for cell depth
+                        ctx.beginPath();
+                        ctx.arc(c.x, c.y, c.radius * 0.7, 0, Math.PI * 2);
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+
+                        // Eukaryotic nucleus
+                        ctx.beginPath();
+                        ctx.arc(c.x + c.radius * 0.15, c.y - c.radius * 0.1, c.radius * 0.25, 0, Math.PI * 2);
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+                        ctx.fill();
+                    }
+
+                    // --- Draw ECG Pulse Heartbeat Line ---
+                    const ecgYBase = height * 0.8;
+                    
+                    // Faint horizontal baseline
+                    ctx.beginPath();
+                    ctx.moveTo(0, ecgYBase);
+                    ctx.lineTo(width, ecgYBase);
+                    ctx.strokeStyle = 'rgba(197, 160, 89, 0.04)';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                    
+                    ecgX += ecgSpeed;
+                    if (ecgX > width) {
+                        ecgX = 0;
+                    }
+
+                    // Draw glowing scanning pulse segment-by-segment for correct trailing fade-out
+                    const startX = Math.floor(ecgX - 300);
+                    const endX = Math.floor(ecgX + 50);
+                    ctx.lineWidth = 1.8;
+                    for (let x = startX; x < endX; x += 4) {
+                        const rawX = (x + width) % width;
+                        const nextRawX = (x + 4 + width) % width;
+                        if (nextRawX < rawX) continue; // Skip boundary jump
+
+                        let alpha = 0;
+                        if (x < ecgX) {
+                            alpha = Math.max(0, 1 - (ecgX - x) / 300);
+                        } else {
+                            alpha = Math.max(0, 0.15 - (x - ecgX) / 50);
+                        }
+
+                        if (alpha > 0) {
+                            const y1 = ecgYBase + getHeartbeatY(rawX % 400, 400);
+                            const y2 = ecgYBase + getHeartbeatY(nextRawX % 400, 400);
                             
-                            if (dist < 130) {
-                                const alpha = (130 - dist) / 130 * 0.12;
-                                ctx.beginPath();
-                                ctx.moveTo(p1.x, p1.y);
-                                ctx.lineTo(p2.x, p2.y);
-                                ctx.strokeStyle = `rgba(180, 155, 115, ${alpha * 1.4})`;
-                                ctx.lineWidth = 0.8;
-                                ctx.stroke();
-                            }
+                            ctx.beginPath();
+                            ctx.moveTo(rawX, y1);
+                            ctx.lineTo(nextRawX, y2);
+                            ctx.strokeStyle = `rgba(197, 160, 89, ${alpha * 0.28})`;
+                            ctx.stroke();
                         }
                     }
-                    
+
+                    // --- Draw Rotating DNA Double Helix ---
+                    dnaRotation += 0.015;
+                    const dnaYBase = height * 0.35;
+                    const dnaAmplitude = 40;
+                    const dnaRadius = 25;
+                    const dnaSpacing = width / (dnaNodes - 1);
+
+                    // Strand A backbone line
+                    ctx.beginPath();
+                    for (let i = 0; i < dnaNodes; i++) {
+                        const x = i * dnaSpacing;
+                        const phase = i * 0.45;
+                        const angle = dnaRotation + phase;
+                        const yA = dnaYBase + Math.sin(angle) * dnaAmplitude;
+                        if (i === 0) ctx.moveTo(x, yA);
+                        else ctx.lineTo(x, yA);
+                    }
+                    ctx.strokeStyle = 'rgba(197, 160, 89, 0.18)';
+                    ctx.lineWidth = 1.8;
+                    ctx.stroke();
+
+                    // Strand B backbone line
+                    ctx.beginPath();
+                    for (let i = 0; i < dnaNodes; i++) {
+                        const x = i * dnaSpacing;
+                        const phase = i * 0.45;
+                        const angle = dnaRotation + phase;
+                        const yB = dnaYBase + Math.sin(angle + Math.PI) * dnaAmplitude;
+                        if (i === 0) ctx.moveTo(x, yB);
+                        else ctx.lineTo(x, yB);
+                    }
+                    ctx.strokeStyle = 'rgba(160, 140, 110, 0.15)';
+                    ctx.lineWidth = 1.8;
+                    ctx.stroke();
+
+                    // DNA Rungs and Nodes
+                    for (let i = 0; i < dnaNodes; i++) {
+                        const x = i * dnaSpacing;
+                        const phase = i * 0.45;
+                        const angle = dnaRotation + phase;
+
+                        const yA = dnaYBase + Math.sin(angle) * dnaAmplitude;
+                        const zA = Math.cos(angle) * dnaRadius;
+
+                        const yB = dnaYBase + Math.sin(angle + Math.PI) * dnaAmplitude;
+                        const zB = Math.cos(angle + Math.PI) * dnaRadius;
+
+                        const sizeA = 2 + (1 + zA / dnaRadius) * 1.5;
+                        const sizeB = 2 + (1 + zB / dnaRadius) * 1.5;
+                        const opacityA = 0.15 + (1 + zA / dnaRadius) * 0.35;
+                        const opacityB = 0.15 + (1 + zB / dnaRadius) * 0.35;
+
+                        const rungAlpha = (opacityA + opacityB) / 2 * 0.28;
+                        ctx.beginPath();
+                        ctx.moveTo(x, yA);
+                        ctx.lineTo(x, yB);
+                        ctx.strokeStyle = `rgba(180, 155, 115, ${rungAlpha})`;
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+
+                        ctx.beginPath();
+                        ctx.arc(x, yA, sizeA, 0, Math.PI * 2);
+                        ctx.fillStyle = `rgba(197, 160, 89, ${opacityA})`;
+                        ctx.fill();
+
+                        ctx.beginPath();
+                        ctx.arc(x, yB, sizeB, 0, Math.PI * 2);
+                        ctx.fillStyle = `rgba(160, 140, 110, ${opacityB})`;
+                        ctx.fill();
+                    }
+
                     requestAnimationFrame(animate);
                 }
+
+                animate();
+            })();
+
+            // --- 2. Sidebar Menu Background Live Animation (Vertical) ---
+            (function() {
+                const sidebar = document.querySelector('.sidebar');
+                if (!sidebar) return;
                 
+                const canvas = document.createElement('canvas');
+                canvas.id = 'sidebar-bg-canvas';
+                canvas.style.position = 'absolute';
+                canvas.style.top = '0';
+                canvas.style.left = '0';
+                canvas.style.width = '100%';
+                canvas.style.height = '100%';
+                canvas.style.pointerEvents = 'none';
+                canvas.style.zIndex = '1';
+                sidebar.appendChild(canvas);
+                
+                const ctx = canvas.getContext('2d');
+                let width = canvas.width = sidebar.clientWidth;
+                let height = canvas.height = sidebar.clientHeight;
+                
+                window.addEventListener('resize', () => {
+                    width = canvas.width = sidebar.clientWidth;
+                    height = canvas.height = sidebar.clientHeight;
+                });
+
+                const dnaNodes = 25;
+                const dnaAmplitude = 25;
+                const dnaRadius = 15;
+                let dnaRotation = 0;
+
+                let ecgX = 0;
+                const ecgSpeed = 1.8;
+
+                const cells = [];
+                const cellCount = 6;
+                for (let i = 0; i < cellCount; i++) {
+                    cells.push({
+                        x: Math.random() * width,
+                        y: Math.random() * height,
+                        radius: Math.random() * 12 + 6,
+                        vx: (Math.random() - 0.5) * 0.15,
+                        vy: (Math.random() - 0.5) * 0.15,
+                        color: Math.random() > 0.5 ? 'rgba(197, 160, 89, 0.06)' : 'rgba(160, 140, 110, 0.04)'
+                    });
+                }
+
+                function animate() {
+                    ctx.clearRect(0, 0, width, height);
+
+                    // --- Draw Floating Cells ---
+                    for (let i = 0; i < cells.length; i++) {
+                        const c = cells[i];
+                        c.x += c.vx;
+                        c.y += c.vy;
+
+                        if (c.x < -c.radius) c.x = width + c.radius;
+                        if (c.x > width + c.radius) c.x = -c.radius;
+                        if (c.y < -c.radius) c.y = height + c.radius;
+                        if (c.y > height + c.radius) c.y = -c.radius;
+
+                        ctx.beginPath();
+                        ctx.arc(c.x, c.y, c.radius, 0, Math.PI * 2);
+                        ctx.fillStyle = c.color;
+                        ctx.fill();
+
+                        ctx.beginPath();
+                        ctx.arc(c.x, c.y, c.radius * 0.7, 0, Math.PI * 2);
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.02)';
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+
+                        ctx.beginPath();
+                        ctx.arc(c.x + c.radius * 0.15, c.y - c.radius * 0.1, c.radius * 0.25, 0, Math.PI * 2);
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
+                        ctx.fill();
+                    }
+
+                    // --- Draw ECG Pulse Line (At 88% height) ---
+                    const ecgYBase = height * 0.88;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(0, ecgYBase);
+                    ctx.lineTo(width, ecgYBase);
+                    ctx.strokeStyle = 'rgba(197, 160, 89, 0.03)';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+
+                    ecgX += ecgSpeed;
+                    if (ecgX > width) ecgX = 0;
+
+                    const startX = Math.floor(ecgX - 150);
+                    const endX = Math.floor(ecgX + 30);
+                    ctx.lineWidth = 1.2;
+                    for (let x = startX; x < endX; x += 4) {
+                        const rawX = (x + width) % width;
+                        const nextRawX = (x + 4 + width) % width;
+                        if (nextRawX < rawX) continue;
+
+                        let alpha = 0;
+                        if (x < ecgX) {
+                            alpha = Math.max(0, 1 - (ecgX - x) / 150);
+                        } else {
+                            alpha = Math.max(0, 0.15 - (x - ecgX) / 30);
+                        }
+
+                        if (alpha > 0) {
+                            const y1 = ecgYBase + getHeartbeatY(rawX % 250, 250);
+                            const y2 = ecgYBase + getHeartbeatY(nextRawX % 250, 250);
+                            
+                            ctx.beginPath();
+                            ctx.moveTo(rawX, y1);
+                            ctx.lineTo(nextRawX, y2);
+                            ctx.strokeStyle = `rgba(197, 160, 89, ${alpha * 0.18})`;
+                            ctx.stroke();
+                        }
+                    }
+
+                    // --- Draw Vertical DNA Double Helix (Centered horizontally on the right side) ---
+                    dnaRotation += 0.012;
+                    const dnaXBase = width * 0.82;
+                    const dnaSpacing = height / (dnaNodes - 1);
+
+                    // Strand A backbone
+                    ctx.beginPath();
+                    for (let i = 0; i < dnaNodes; i++) {
+                        const y = i * dnaSpacing;
+                        const phase = i * 0.6;
+                        const angle = dnaRotation + phase;
+                        const xA = dnaXBase + Math.sin(angle) * dnaAmplitude;
+                        if (i === 0) ctx.moveTo(xA, y);
+                        else ctx.lineTo(xA, y);
+                    }
+                    ctx.strokeStyle = 'rgba(197, 160, 89, 0.08)';
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+
+                    // Strand B backbone
+                    ctx.beginPath();
+                    for (let i = 0; i < dnaNodes; i++) {
+                        const y = i * dnaSpacing;
+                        const phase = i * 0.6;
+                        const angle = dnaRotation + phase;
+                        const xB = dnaXBase + Math.sin(angle + Math.PI) * dnaAmplitude;
+                        if (i === 0) ctx.moveTo(xB, y);
+                        else ctx.lineTo(xB, y);
+                    }
+                    ctx.strokeStyle = 'rgba(160, 140, 110, 0.06)';
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+
+                    // DNA Rungs and Nodes
+                    for (let i = 0; i < dnaNodes; i++) {
+                        const y = i * dnaSpacing;
+                        const phase = i * 0.6;
+                        const angle = dnaRotation + phase;
+
+                        const xA = dnaXBase + Math.sin(angle) * dnaAmplitude;
+                        const zA = Math.cos(angle) * dnaRadius;
+
+                        const xB = dnaXBase + Math.sin(angle + Math.PI) * dnaAmplitude;
+                        const zB = Math.cos(angle + Math.PI) * dnaRadius;
+
+                        const sizeA = 1.5 + (1 + zA / dnaRadius) * 1.0;
+                        const sizeB = 1.5 + (1 + zB / dnaRadius) * 1.0;
+                        const opacityA = 0.08 + (1 + zA / dnaRadius) * 0.18;
+                        const opacityB = 0.08 + (1 + zB / dnaRadius) * 0.18;
+
+                        const rungAlpha = (opacityA + opacityB) / 2 * 0.22;
+                        ctx.beginPath();
+                        ctx.moveTo(xA, y);
+                        ctx.lineTo(xB, y);
+                        ctx.strokeStyle = `rgba(180, 155, 115, ${rungAlpha})`;
+                        ctx.lineWidth = 0.8;
+                        ctx.stroke();
+
+                        ctx.beginPath();
+                        ctx.arc(xA, y, sizeA, 0, Math.PI * 2);
+                        ctx.fillStyle = `rgba(197, 160, 89, ${opacityA})`;
+                        ctx.fill();
+
+                        ctx.beginPath();
+                        ctx.arc(xB, y, sizeB, 0, Math.PI * 2);
+                        ctx.fillStyle = `rgba(160, 140, 110, ${opacityB})`;
+                        ctx.fill();
+                    }
+
+                    requestAnimationFrame(animate);
+                }
+
                 animate();
             })();
         });
