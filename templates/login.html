@@ -83,7 +83,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, var(--primary-dark) 0%, #090e1a 100%);
+            background: radial-gradient(circle at center, #fdfbf7 0%, #f3ece0 100%);
             position: relative;
             overflow: hidden;
         }
@@ -94,7 +94,7 @@
             position: absolute;
             width: 600px;
             height: 600px;
-            background: radial-gradient(circle, rgba(197, 160, 89, 0.12) 0%, rgba(15, 23, 42, 0) 70%);
+            background: radial-gradient(circle, rgba(197, 160, 89, 0.25) 0%, rgba(243, 236, 224, 0) 70%);
             border-radius: 50%;
             top: 40%;
             left: 30%;
@@ -104,13 +104,13 @@
             z-index: 2;
         }
 
-        /* Decorative background circle 2 - Navy Pulse */
+        /* Decorative background circle 2 - Navy/Beige Pulse */
         #login-view::after {
             content: '';
             position: absolute;
             width: 500px;
             height: 500px;
-            background: radial-gradient(circle, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0) 75%);
+            background: radial-gradient(circle, rgba(160, 140, 110, 0.15) 0%, rgba(243, 236, 224, 0) 75%);
             border-radius: 50%;
             top: 60%;
             left: 70%;
@@ -140,16 +140,16 @@
 
         /* Glassmorphism Login Card with Entrance Animation */
         .login-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             padding: 3rem;
             border-radius: 12px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+            box-shadow: 0 20px 50px rgba(139, 120, 90, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 5px 15px rgba(0, 0, 0, 0.03);
             width: 100%;
             max-width: 420px;
             text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.6);
             border-top: 4px solid var(--accent-gold);
             z-index: 10;
             transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1), box-shadow 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
@@ -157,7 +157,7 @@
 
         .login-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 30px 50px rgba(0, 0, 0, 0.4), 0 0 15px rgba(197, 160, 89, 0.15);
+            box-shadow: 0 35px 70px rgba(139, 120, 90, 0.18), 0 0 25px rgba(197, 160, 89, 0.2);
         }
 
         /* Staggered entrance animation for login-card children */
@@ -2293,7 +2293,7 @@
                         this.vx = (Math.random() - 0.5) * 0.35;
                         this.vy = (Math.random() - 0.5) * 0.35;
                         this.radius = Math.random() * 2 + 1;
-                        this.color = Math.random() > 0.45 ? 'rgba(197, 160, 89, 0.22)' : 'rgba(148, 163, 184, 0.15)';
+                        this.color = Math.random() > 0.45 ? 'rgba(197, 160, 89, 0.45)' : 'rgba(160, 140, 110, 0.35)';
                     }
                     
                     update() {
@@ -2356,7 +2356,7 @@
                                 ctx.beginPath();
                                 ctx.moveTo(p1.x, p1.y);
                                 ctx.lineTo(p2.x, p2.y);
-                                ctx.strokeStyle = `rgba(197, 160, 89, ${alpha})`;
+                                ctx.strokeStyle = `rgba(180, 155, 115, ${alpha * 1.4})`;
                                 ctx.lineWidth = 0.8;
                                 ctx.stroke();
                             }
