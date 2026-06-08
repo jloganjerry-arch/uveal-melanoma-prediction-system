@@ -2392,14 +2392,19 @@
                         ecgX = 0;
                     }
 
-                    // Draw glowing scanning pulse segment-by-segment for correct trailing fade-out
+                    // Draw glowing scanning pulse segment-by-segment with premium glow filter
                     const startX = Math.floor(ecgX - 300);
                     const endX = Math.floor(ecgX + 50);
+                    
+                    ctx.save();
+                    ctx.shadowBlur = 8;
+                    ctx.shadowColor = 'rgba(225, 190, 120, 0.5)';
                     ctx.lineWidth = 1.8;
+                    
                     for (let x = startX; x < endX; x += 4) {
                         const rawX = (x + width) % width;
                         const nextRawX = (x + 4 + width) % width;
-                        if (nextRawX < rawX) continue; // Skip boundary jump
+                        if (nextRawX < rawX) continue;
 
                         let alpha = 0;
                         if (x < ecgX) {
@@ -2415,10 +2420,11 @@
                             ctx.beginPath();
                             ctx.moveTo(rawX, y1);
                             ctx.lineTo(nextRawX, y2);
-                            ctx.strokeStyle = `rgba(197, 160, 89, ${alpha * 0.28})`;
+                            ctx.strokeStyle = `rgba(225, 190, 120, ${alpha * 0.35})`;
                             ctx.stroke();
                         }
                     }
+                    ctx.restore();
 
                     // --- Draw Rotating DNA Double Helix ---
                     dnaRotation += 0.015;
@@ -2437,7 +2443,7 @@
                         if (i === 0) ctx.moveTo(x, yA);
                         else ctx.lineTo(x, yA);
                     }
-                    ctx.strokeStyle = 'rgba(197, 160, 89, 0.18)';
+                    ctx.strokeStyle = 'rgba(225, 190, 120, 0.18)';
                     ctx.lineWidth = 1.8;
                     ctx.stroke();
 
@@ -2451,11 +2457,14 @@
                         if (i === 0) ctx.moveTo(x, yB);
                         else ctx.lineTo(x, yB);
                     }
-                    ctx.strokeStyle = 'rgba(160, 140, 110, 0.15)';
+                    ctx.strokeStyle = 'rgba(180, 155, 115, 0.15)';
                     ctx.lineWidth = 1.8;
                     ctx.stroke();
 
-                    // DNA Rungs and Nodes
+                    // DNA Rungs and Nodes with Glow
+                    ctx.save();
+                    ctx.shadowBlur = 6;
+                    ctx.shadowColor = 'rgba(225, 190, 120, 0.45)';
                     for (let i = 0; i < dnaNodes; i++) {
                         const x = i * dnaSpacing;
                         const phase = i * 0.45;
@@ -2482,14 +2491,15 @@
 
                         ctx.beginPath();
                         ctx.arc(x, yA, sizeA, 0, Math.PI * 2);
-                        ctx.fillStyle = `rgba(197, 160, 89, ${opacityA})`;
+                        ctx.fillStyle = `rgba(225, 190, 120, ${opacityA})`;
                         ctx.fill();
 
                         ctx.beginPath();
                         ctx.arc(x, yB, sizeB, 0, Math.PI * 2);
-                        ctx.fillStyle = `rgba(160, 140, 110, ${opacityB})`;
+                        ctx.fillStyle = `rgba(180, 155, 115, ${opacityB})`;
                         ctx.fill();
                     }
+                    ctx.restore();
 
                     requestAnimationFrame(animate);
                 }
@@ -2544,6 +2554,18 @@
                 }
 
                 function animate() {
+                    // AUTO-RESIZE: Check parent size in each frame and resize if needed!
+                    if (sidebar.clientWidth !== width || sidebar.clientHeight !== height) {
+                        width = canvas.width = sidebar.clientWidth;
+                        height = canvas.height = sidebar.clientHeight;
+                    }
+                    
+                    // Pause rendering when dimensions are 0 (hidden)
+                    if (width === 0 || height === 0) {
+                        requestAnimationFrame(animate);
+                        return;
+                    }
+
                     ctx.clearRect(0, 0, width, height);
 
                     // --- Draw Floating Cells ---
@@ -2589,7 +2611,11 @@
 
                     const startX = Math.floor(ecgX - 150);
                     const endX = Math.floor(ecgX + 30);
-                    ctx.lineWidth = 1.2;
+                    
+                    ctx.save();
+                    ctx.shadowBlur = 8;
+                    ctx.shadowColor = 'rgba(225, 190, 120, 0.6)';
+                    ctx.lineWidth = 1.6;
                     for (let x = startX; x < endX; x += 4) {
                         const rawX = (x + width) % width;
                         const nextRawX = (x + 4 + width) % width;
@@ -2609,10 +2635,11 @@
                             ctx.beginPath();
                             ctx.moveTo(rawX, y1);
                             ctx.lineTo(nextRawX, y2);
-                            ctx.strokeStyle = `rgba(197, 160, 89, ${alpha * 0.18})`;
+                            ctx.strokeStyle = `rgba(225, 190, 120, ${alpha * 0.32})`;
                             ctx.stroke();
                         }
                     }
+                    ctx.restore();
 
                     // --- Draw Vertical DNA Double Helix (Centered horizontally on the right side) ---
                     dnaRotation += 0.012;
@@ -2629,7 +2656,7 @@
                         if (i === 0) ctx.moveTo(xA, y);
                         else ctx.lineTo(xA, y);
                     }
-                    ctx.strokeStyle = 'rgba(197, 160, 89, 0.08)';
+                    ctx.strokeStyle = 'rgba(225, 190, 120, 0.15)';
                     ctx.lineWidth = 1.5;
                     ctx.stroke();
 
@@ -2643,11 +2670,14 @@
                         if (i === 0) ctx.moveTo(xB, y);
                         else ctx.lineTo(xB, y);
                     }
-                    ctx.strokeStyle = 'rgba(160, 140, 110, 0.06)';
+                    ctx.strokeStyle = 'rgba(180, 155, 115, 0.12)';
                     ctx.lineWidth = 1.5;
                     ctx.stroke();
 
                     // DNA Rungs and Nodes
+                    ctx.save();
+                    ctx.shadowBlur = 6;
+                    ctx.shadowColor = 'rgba(225, 190, 120, 0.5)';
                     for (let i = 0; i < dnaNodes; i++) {
                         const y = i * dnaSpacing;
                         const phase = i * 0.6;
@@ -2659,12 +2689,12 @@
                         const xB = dnaXBase + Math.sin(angle + Math.PI) * dnaAmplitude;
                         const zB = Math.cos(angle + Math.PI) * dnaRadius;
 
-                        const sizeA = 1.5 + (1 + zA / dnaRadius) * 1.0;
-                        const sizeB = 1.5 + (1 + zB / dnaRadius) * 1.0;
-                        const opacityA = 0.08 + (1 + zA / dnaRadius) * 0.18;
-                        const opacityB = 0.08 + (1 + zB / dnaRadius) * 0.18;
+                        const sizeA = 1.5 + (1 + zA / dnaRadius) * 1.2;
+                        const sizeB = 1.5 + (1 + zB / dnaRadius) * 1.2;
+                        const opacityA = 0.1 + (1 + zA / dnaRadius) * 0.28;
+                        const opacityB = 0.1 + (1 + zB / dnaRadius) * 0.28;
 
-                        const rungAlpha = (opacityA + opacityB) / 2 * 0.22;
+                        const rungAlpha = (opacityA + opacityB) / 2 * 0.28;
                         ctx.beginPath();
                         ctx.moveTo(xA, y);
                         ctx.lineTo(xB, y);
@@ -2674,14 +2704,15 @@
 
                         ctx.beginPath();
                         ctx.arc(xA, y, sizeA, 0, Math.PI * 2);
-                        ctx.fillStyle = `rgba(197, 160, 89, ${opacityA})`;
+                        ctx.fillStyle = `rgba(225, 190, 120, ${opacityA})`;
                         ctx.fill();
 
                         ctx.beginPath();
                         ctx.arc(xB, y, sizeB, 0, Math.PI * 2);
-                        ctx.fillStyle = `rgba(160, 140, 110, ${opacityB})`;
+                        ctx.fillStyle = `rgba(180, 155, 115, ${opacityB})`;
                         ctx.fill();
                     }
+                    ctx.restore();
 
                     requestAnimationFrame(animate);
                 }
