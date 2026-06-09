@@ -48,9 +48,13 @@ def api_predict():
         
         prediction_val = round(risk_score, 2)
         
-        if risk_score > 70:
+        # Load dynamic thresholds from config
+        high_threshold = app.config.get('RISK_THRESHOLD_HIGH', 70.0)
+        intermediate_threshold = app.config.get('RISK_THRESHOLD_INTERMEDIATE', 50.0)
+        
+        if risk_score > high_threshold:
             risk_level = "High Risk"
-        elif risk_score >= 50:
+        elif risk_score >= intermediate_threshold:
             risk_level = "Intermediate Risk"
         else:
             risk_level = "Low Risk"
@@ -60,6 +64,14 @@ def api_predict():
         shap_path = os.path.join(STATIC_OUTPUTS, shap_filename)
         generate_shap_plot(model, input_data, features, shap_path)
         shap_url = f"outputs/{shap_filename}"
+        
+        # Calculate SHAP contribution details for Prediction Explanation Mode
+        import shap
+        import numpy as np
+        explainer = shap.Explainer(model)
+        shap_vals = explainer(np.array([input_data]))
+        shap_contributions = shap_vals.values[0].tolist()
+        shap_details = {features[i]: round(float(shap_contributions[i]), 4) for i in range(len(features))}
         
         # Save to Database
         new_pred = Prediction(
@@ -75,7 +87,8 @@ def api_predict():
             "prediction": prediction_val,
             "risk_level": risk_level,
             "shap_url": shap_url,
-            "km_plot_url": km_plot_url
+            "km_plot_url": km_plot_url,
+            "shap_details": shap_details
         })
 
     except Exception as e:
@@ -144,6 +157,35 @@ def api_patients():
         return jsonify({
             "success": True,
             "patients": patients
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+
+# ==============================
+# API: AI Medical Assistant Chat
+# ==============================
+@app.route("/api/chat", methods=["POST"])
+def api_chat():
+    try:
+        from utils.medical_ai import MedicalAIEngine
+        
+        # Load active model config thresholds
+        high_threshold = app.config.get('RISK_THRESHOLD_HIGH', 70.0)
+        intermediate_threshold = app.config.get('RISK_THRESHOLD_INTERMEDIATE', 50.0)
+        
+        # Instantiate AI Engine
+        engine = MedicalAIEngine(high_threshold=high_threshold, intermediate_threshold=intermediate_threshold)
+        
+        data = request.get_json()
+        message = data.get("message", "")
+        history = data.get("history", [])
+        patient_data = data.get("patient_data") # Optional, for Prediction Explanation Mode
+        
+        response_text = engine.query(message=message, history=history, patient_data=patient_data)
+        
+        return jsonify({
+            "success": True,
+            "response": response_text
         })
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 400

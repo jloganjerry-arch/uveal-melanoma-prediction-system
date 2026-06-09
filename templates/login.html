@@ -554,6 +554,11 @@
                         <span>Data Analysis</span>
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" id="nav-medical-assistant" onclick="switchNav('assistant')">
+                        <span>AI Medical Assistant</span>
+                    </a>
+                </li>
             </ul>
             <div class="user-profile">
                 <span id="user-role-display">Doctor</span>
@@ -693,6 +698,12 @@
                         <div style="margin-top: 1.5rem; font-size: 0.9rem; color: var(--text-main); line-height: 1.5;">
                             <strong>Interpretation:</strong> Based on the input parameters, the model predicts the
                             likelihood of metastasis.
+                        </div>
+
+                        <div style="margin-top: 1.5rem;">
+                            <button id="explain-ai-btn" class="btn-royal" onclick="triggerPredictionExplanation()" style="margin-top: 0; padding: 0.75rem 1rem; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%;">
+                                <span>✨ Explain with AI Medical Assistant</span>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -1167,6 +1178,183 @@
                     </div>
                 </div>
             </div>
+            <!-- AI MEDICAL ASSISTANT VIEW (Hidden initially) -->
+            <div id="assistant-content" class="hidden">
+                <style>
+                    /* Custom styles for AI Assistant to ensure premium UI */
+                    .disclaimer-banner {
+                        animation: slideDownFade 0.4s ease-out;
+                    }
+                    @keyframes slideDownFade {
+                        from { opacity: 0; transform: translateY(-10px); }
+                        to { opacity: 1; transform: translateY(0); }
+                    }
+                    .suggest-btn {
+                        text-align: left;
+                        background: #f8fafc;
+                        border: 1px solid #e2e8f0;
+                        padding: 0.65rem 0.85rem;
+                        border-radius: 6px;
+                        font-size: 0.85rem;
+                        cursor: pointer;
+                        color: var(--text-main);
+                        font-weight: 500;
+                        transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+                        animation: slideInLeft 0.4s ease-out both;
+                    }
+                    .suggest-btn:nth-child(1) { animation-delay: 0.05s; }
+                    .suggest-btn:nth-child(2) { animation-delay: 0.1s; }
+                    .suggest-btn:nth-child(3) { animation-delay: 0.15s; }
+                    .suggest-btn:nth-child(4) { animation-delay: 0.2s; }
+                    .suggest-btn:nth-child(5) { animation-delay: 0.25s; }
+                    .suggest-btn:nth-child(6) { animation-delay: 0.3s; }
+                    .suggest-btn:nth-child(7) { animation-delay: 0.35s; }
+                    .suggest-btn:nth-child(8) { animation-delay: 0.4s; }
+
+                    .suggest-btn:hover {
+                        border-color: var(--accent-gold);
+                        background: #ffffff;
+                        transform: translateY(-2px);
+                        box-shadow: 0 6px 12px -2px rgba(197, 160, 89, 0.12);
+                    }
+                    .chat-bubble-user {
+                        background: rgba(197, 160, 89, 0.12);
+                        padding: 0.85rem 1.1rem;
+                        border-radius: 12px 0 12px 12px;
+                        font-size: 0.95rem;
+                        line-height: 1.5;
+                        color: var(--primary-dark);
+                        box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), 0 2px 4px rgba(0,0,0,0.02);
+                        border: 1px solid rgba(197,160,89,0.2);
+                        animation: slideInRight 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+                    }
+                    .chat-bubble-ai {
+                        background: #ffffff;
+                        padding: 0.85rem 1.1rem;
+                        border-radius: 0 12px 12px 12px;
+                        font-size: 0.95rem;
+                        line-height: 1.5;
+                        color: var(--text-main);
+                        box-shadow: inset 0 1px 0 white, 0 2px 4px rgba(0,0,0,0.02);
+                        border: 1px solid #e2e8f0;
+                        transition: opacity 0.15s ease-out;
+                    }
+                    .mode-badge {
+                        background: var(--primary-dark);
+                        color: var(--accent-gold);
+                        padding: 0.25rem 0.6rem;
+                        border-radius: 4px;
+                        font-size: 0.75rem;
+                        font-weight: 700;
+                        text-transform: uppercase;
+                        letter-spacing: 0.5px;
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 0.25rem;
+                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                    }
+                    @keyframes slideInRight {
+                        from { opacity: 0; transform: translateX(20px); }
+                        to { opacity: 1; transform: translateX(0); }
+                    }
+                    @keyframes slideInLeft {
+                        from { opacity: 0; transform: translateX(-15px); }
+                        to { opacity: 1; transform: translateX(0); }
+                    }
+                    @keyframes slideUpFade {
+                        from { opacity: 0; transform: translateY(15px); }
+                        to { opacity: 1; transform: translateY(0); }
+                    }
+                    @keyframes pulseAvatar {
+                        0% { transform: scale(1); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+                        50% { transform: scale(1.06); box-shadow: 0 0 12px rgba(197, 160, 89, 0.45); }
+                        100% { transform: scale(1); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+                    }
+                    .pulse-avatar {
+                        animation: pulseAvatar 2s infinite ease-in-out;
+                    }
+                </style>
+                
+                <!-- Disclaimer Banner -->
+                <div class="disclaimer-banner" style="background: rgba(197, 160, 89, 0.08); border-left: 4px solid var(--accent-gold); padding: 0.85rem 1.25rem; border-radius: 6px; margin-bottom: 1.5rem; font-size: 0.85rem; color: var(--primary-dark); display: flex; align-items: center; justify-content: space-between; gap: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                    <div style="display: flex; align-items: center; gap: 0.6rem;">
+                        <span style="font-size: 1.2rem;">⚠️</span>
+                        <span><strong>Important Notice:</strong> This assistant is for educational support only. It is not a substitute for clinical diagnostics, prescription drugs, emergency clinical decisions, or individual oncology consultations.</span>
+                    </div>
+                    <div id="ai-mode-status" style="display: none;">
+                        <span class="mode-badge">🎯 Prediction Explanation Mode</span>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 2.2fr 1fr; gap: 1.5rem; height: calc(100vh - 200px); min-height: 450px;">
+                    <!-- Left: Chat Panel -->
+                    <div class="card" style="display: flex; flex-direction: column; margin-bottom: 0; padding: 1.5rem; height: 100%; min-height: 0; position: relative;">
+                        <!-- Chat History Area -->
+                        <div id="chat-messages" style="flex-grow: 1; overflow-y: auto; padding-right: 0.5rem; margin-bottom: 1rem; display: flex; flex-direction: column; gap: 1.25rem;">
+                            <!-- Welcome Message -->
+                            <div class="chat-msg system" style="display: flex; gap: 0.75rem; max-width: 85%;">
+                                <div style="background: var(--accent-gold); color: var(--primary-dark); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">AI</div>
+                                <div>
+                                    <div class="chat-bubble-ai">
+                                        Hello, I am your specialized **AI Medical Assistant** for the Uveal Melanoma Prognostic System. 
+                                        <br><br>
+                                        I can explain uveal melanoma ocular oncology, interpret prediction risk categories, review diagnostic options, and analyze this prediction model's features.
+                                        <br><br>
+                                        How can I assist you today?
+                                    </div>
+                                    <span style="font-size: 0.75rem; color: var(--text-light); margin-left: 0.25rem; margin-top: 0.25rem; display: inline-block;">System Welcome</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Typing Indicator -->
+                        <div id="chat-typing" class="hidden" style="display: flex; gap: 0.75rem; align-items: center; margin-bottom: 1rem; padding-left: 0.25rem;">
+                            <div style="background: var(--accent-gold); color: var(--primary-dark); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;">AI</div>
+                            <div style="background: #ffffff; padding: 0.6rem 1rem; border-radius: 0 12px 12px 12px; display: flex; align-items: center; gap: 0.25rem; border: 1px solid #e2e8f0;">
+                                <span class="typing-dot" style="width: 6px; height: 6px; background: var(--text-light); border-radius: 50%; animation: pulseTyping 1.4s infinite both;"></span>
+                                <span class="typing-dot" style="width: 6px; height: 6px; background: var(--text-light); border-radius: 50%; animation: pulseTyping 1.4s infinite both 0.2s;"></span>
+                                <span class="typing-dot" style="width: 6px; height: 6px; background: var(--text-light); border-radius: 50%; animation: pulseTyping 1.4s infinite both 0.4s;"></span>
+                            </div>
+                        </div>
+
+                        <!-- Chat Input Panel -->
+                        <form id="chat-form" style="display: flex; gap: 0.75rem; align-items: center; border-top: 1px solid #e2e8f0; padding-top: 1rem;">
+                            <input type="text" id="chat-input" class="form-control" placeholder="Ask about uveal melanoma or risk scores..." required autocomplete="off" style="margin-bottom: 0;">
+                            <button type="submit" class="btn-royal" style="margin-top: 0; width: auto; padding: 0.85rem 1.5rem; display: flex; align-items: center; gap: 0.5rem; white-space: nowrap;">
+                                <span>Send</span>
+                                <span>✈️</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Right: Suggestions & Info Panel -->
+                    <div style="display: flex; flex-direction: column; gap: 1.5rem; height: 100%; min-height: 0; overflow-y: auto; padding-right: 0.25rem;">
+                        <!-- Quick suggestions -->
+                        <div class="card" style="margin-bottom: 0; padding: 1.5rem;">
+                            <h3 style="font-size: 1.1rem; color: var(--primary-dark); margin-bottom: 1rem; font-family: 'Playfair Display', serif; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem;">Suggested Questions</h3>
+                            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                <button class="suggest-btn" onclick="sendQuickQuestion('What is uveal melanoma?')">What is uveal melanoma?</button>
+                                <button class="suggest-btn" onclick="sendQuickQuestion('What are the major risk factors?')">What are the major risk factors?</button>
+                                <button class="suggest-btn" onclick="sendQuickQuestion('How does this prediction model work?')">How does this prediction model work?</button>
+                                <button class="suggest-btn" onclick="sendQuickQuestion('What does a High Risk prediction mean?')">What does a High Risk prediction mean?</button>
+                                <button class="suggest-btn" onclick="sendQuickQuestion('What diagnostic methods are used?')">What diagnostic methods are used?</button>
+                                <button class="suggest-btn" onclick="sendQuickQuestion('What treatment options are generally available?')">What treatment options are generally available?</button>
+                                <button class="suggest-btn" onclick="sendQuickQuestion('Explain ocular oncology.')">Explain ocular oncology.</button>
+                                <button class="suggest-btn" onclick="sendQuickQuestion('What are the limitations of this model?')">What are the limitations of this model?</button>
+                            </div>
+                        </div>
+
+                        <!-- System Specs / Reference -->
+                        <div class="card" style="margin-bottom: 0; padding: 1.5rem; font-size: 0.85rem; line-height: 1.5; color: var(--text-main);">
+                            <h3 style="font-size: 1.1rem; color: var(--primary-dark); margin-bottom: 0.75rem; font-family: 'Playfair Display', serif; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem;">Model Reference</h3>
+                            <p style="margin-bottom: 0.5rem;"><strong>Model Architecture:</strong> XGBoost Classifier</p>
+                            <p style="margin-bottom: 0.5rem;"><strong>Parameters Evaluated:</strong> Sex, Age Range, Race, derived AJCC Stage, Radiation Therapy, and Chemotherapy.</p>
+                            <p style="margin-bottom: 0.5rem;"><strong>Explainability:</strong> Direct feature impact contributions calculated using SHAP (Shapley Additive exPlanations) waterfall models.</p>
+                            <p style="margin-bottom: 0.5rem;"><strong>Future Integration:</strong> Future-ready RAG architecture supports plug-and-play Pinecone or ChromaDB context retrieval.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </main>
     </section>
 
@@ -1509,6 +1697,8 @@
         const navPatients = document.getElementById('nav-patients-record');
         const navHistory = document.getElementById('nav-history');
         const navAnalytics = document.getElementById('nav-data-analytics');
+        const navAssistant = document.getElementById('nav-medical-assistant');
+        const assistantContent = document.getElementById('assistant-content');
 
         const resultPlaceholder = document.getElementById('result-placeholder');
         const resultDisplay = document.getElementById('result-display');
@@ -1516,6 +1706,8 @@
         const categoryOutput = document.getElementById('category-output');
 
         let allPatientsData = [];
+        let lastPredictionData = null;
+        let activeExplanationPatient = null;
 
         // --- 1. Handle Login ---
         loginForm.addEventListener('submit', function (e) {
@@ -1537,12 +1729,14 @@
             navPatients.classList.remove('active');
             navHistory.classList.remove('active');
             navAnalytics.classList.remove('active');
+            navAssistant.classList.remove('active');
 
             // Hide all content areas
             doctorContent.classList.add('hidden');
             patientsContent.classList.add('hidden');
             historyContent.classList.add('hidden');
             analyticsContent.classList.add('hidden');
+            assistantContent.classList.add('hidden');
 
             if (tab === 'prediction') {
                 navPrediction.classList.add('active');
@@ -1563,6 +1757,15 @@
                 analyticsContent.classList.remove('hidden');
                 pageTitle.innerText = "Data Analysis";
                 showAnalyticsDashboard();
+            } else if (tab === 'assistant') {
+                navAssistant.classList.add('active');
+                assistantContent.classList.remove('hidden');
+                pageTitle.innerText = "AI Medical Assistant";
+                
+                // Clear Prediction Explanation Mode status display if switching tabs manually without a target patient
+                if (!activeExplanationPatient) {
+                    exitPredictionExplanationMode();
+                }
             }
         }
 
@@ -2028,6 +2231,16 @@
                     resultPlaceholder.classList.add('hidden');
                     resultDisplay.classList.remove('hidden');
                     resultDisplay.classList.add('fade-in');
+
+                    // Store prediction details locally for AI Medical Assistant explainability
+                    lastPredictionData = {
+                        sex: payload.sex,
+                        age: payload.age,
+                        stage: payload.stage,
+                        risk_score: data.prediction,
+                        risk_category: data.risk_level,
+                        shap_details: data.shap_details
+                    };
                 } else {
                     alert('Error evaluating model: ' + data.error);
                 }
@@ -2719,6 +2932,254 @@
 
                 animate();
             })();
+
+            // ===================================
+            // AI Medical Assistant Event Handlers
+            // ===================================
+            const chatForm = document.getElementById('chat-form');
+            const chatInput = document.getElementById('chat-input');
+            const chatMessages = document.getElementById('chat-messages');
+            const chatTyping = document.getElementById('chat-typing');
+            const aiModeStatus = document.getElementById('ai-mode-status');
+            let chatHistory = [];
+
+            window.exitPredictionExplanationMode = function() {
+                activeExplanationPatient = null;
+                if (aiModeStatus) aiModeStatus.style.display = 'none';
+            };
+
+            window.triggerPredictionExplanation = function() {
+                if (!lastPredictionData) {
+                    alert("Please run a patient risk calculation first.");
+                    return;
+                }
+                activeExplanationPatient = lastPredictionData;
+                if (aiModeStatus) aiModeStatus.style.display = 'block';
+                
+                // Switch navigation tab to assistant
+                switchNav('assistant');
+                
+                // Format query question automatically
+                const sexStr = activeExplanationPatient.sex == "1" ? "female" : "male";
+                const messageText = `Explain prediction result: Patient is a ${activeExplanationPatient.age}-year-old ${sexStr}, diagnosed with Stage ${activeExplanationPatient.stage} uveal melanoma. The model calculated a risk score of ${activeExplanationPatient.risk_score}% (${activeExplanationPatient.risk_category}).`;
+                
+                sendPredictionExplanationQuery(messageText);
+            };
+
+            window.sendQuickQuestion = function(questionText) {
+                if (chatInput) {
+                    chatInput.value = questionText;
+                    chatForm.dispatchEvent(new Event('submit'));
+                }
+            };
+
+            async function sendPredictionExplanationQuery(message) {
+                // Append user message bubble
+                appendUserMessage(message);
+
+                // Show typing indicator
+                chatTyping.classList.remove('hidden');
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+
+                // Update chat history
+                chatHistory.push({ role: 'user', content: message });
+                if (chatHistory.length > 10) chatHistory.shift();
+
+                try {
+                    const response = await fetch('/api/chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            message: message,
+                            history: chatHistory,
+                            patient_data: activeExplanationPatient
+                        })
+                    });
+
+                    const data = await response.json();
+                    chatTyping.classList.add('hidden');
+
+                    if (data.success) {
+                        const reply = data.response;
+                        chatHistory.push({ role: 'assistant', content: reply });
+                        if (chatHistory.length > 10) chatHistory.shift();
+
+                        appendAIMessage(reply);
+                    } else {
+                        appendError("Error fetching explanation: " + data.error);
+                    }
+                } catch (err) {
+                    chatTyping.classList.add('hidden');
+                    appendError("Connection error: " + err.message);
+                }
+            }
+
+            if (chatForm) {
+                chatForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    const message = chatInput.value.trim();
+                    if (!message) return;
+
+                    chatInput.value = '';
+                    
+                    // Append User Message to UI
+                    appendUserMessage(message);
+
+                    // Show Typing Animation
+                    chatTyping.classList.remove('hidden');
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+
+                    // Update chat history context
+                    chatHistory.push({ role: 'user', content: message });
+                    if (chatHistory.length > 10) chatHistory.shift();
+
+                    try {
+                        const response = await fetch('/api/chat', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                message: message,
+                                history: chatHistory,
+                                patient_data: activeExplanationPatient // Pass explanation context if active
+                            })
+                        });
+                        
+                        const data = await response.json();
+                        
+                        // Hide Typing Animation
+                        chatTyping.classList.add('hidden');
+
+                        if (data.success) {
+                            const reply = data.response;
+                            chatHistory.push({ role: 'assistant', content: reply });
+                            if (chatHistory.length > 10) chatHistory.shift();
+
+                            appendAIMessage(reply);
+                        } else {
+                            appendError("Error communicating with AI: " + data.error);
+                        }
+                    } catch (err) {
+                        chatTyping.classList.add('hidden');
+                        appendError("Connection error: Failed to reach backend.");
+                    }
+                });
+            }
+
+            function appendUserMessage(text) {
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const userMsgHtml = `
+                    <div class="chat-msg user" style="display: flex; gap: 0.75rem; max-width: 85%; align-self: flex-end; flex-direction: row-reverse; margin-top: 0.5rem;" class="fade-in">
+                        <div style="background: var(--primary-dark); color: var(--accent-gold); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">MD</div>
+                        <div>
+                            <div class="chat-bubble-user">
+                                ${escapeHtml(text)}
+                            </div>
+                            <span style="font-size: 0.75rem; color: var(--text-light); margin-right: 0.25rem; margin-top: 0.25rem; display: inline-block; text-align: right; width: 100%;">${timeStr}</span>
+                        </div>
+                    </div>
+                `;
+                chatMessages.insertAdjacentHTML('beforeend', userMsgHtml);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+
+            function appendAIMessage(text) {
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                
+                // Unique ID for streaming target
+                const msgId = 'ai-msg-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+                
+                const aiMsgHtml = `
+                    <div class="chat-msg assistant" style="display: flex; gap: 0.75rem; max-width: 85%; margin-top: 0.5rem; animation: slideUpFade 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);">
+                        <div class="pulse-avatar" style="background: var(--accent-gold); color: var(--primary-dark); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;">AI</div>
+                        <div>
+                            <div class="chat-bubble-ai" id="${msgId}"></div>
+                            <span style="font-size: 0.75rem; color: var(--text-light); margin-left: 0.25rem; margin-top: 0.25rem; display: inline-block;">${timeStr}</span>
+                        </div>
+                    </div>
+                `;
+                
+                chatMessages.insertAdjacentHTML('beforeend', aiMsgHtml);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                
+                const bubbleElement = document.getElementById(msgId);
+                if (!bubbleElement) return;
+
+                // Split text into tokens (words and spaces/newlines)
+                const tokens = text.split(/(\s+)/);
+                let currentText = "";
+                let index = 0;
+                
+                function typeNextToken() {
+                    if (index < tokens.length) {
+                        currentText += tokens[index];
+                        bubbleElement.innerHTML = formatMarkdown(currentText);
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                        index++;
+                        // Standard typewriter speed: 20ms per token
+                        setTimeout(typeNextToken, 20);
+                    }
+                }
+                
+                typeNextToken();
+            }
+
+            function appendError(text) {
+                const errorHtml = `
+                    <div class="chat-msg assistant" style="display: flex; gap: 0.75rem; max-width: 85%; margin-top: 0.5rem;">
+                        <div style="background: #ef4444; color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;">⚠️</div>
+                        <div>
+                            <div style="background: #fee2e2; padding: 0.85rem 1.1rem; border-radius: 0 12px 12px 12px; font-size: 0.95rem; line-height: 1.5; color: #b91c1c; border: 1px solid rgba(239, 68, 68, 0.2);">
+                                ${escapeHtml(text)}
+                            </div>
+                            <span style="font-size: 0.75rem; color: var(--text-light); margin-left: 0.25rem; margin-top: 0.25rem; display: inline-block;">Error</span>
+                        </div>
+                    </div>
+                `;
+                chatMessages.insertAdjacentHTML('beforeend', errorHtml);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+
+            function escapeHtml(text) {
+                return text
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
+
+            function formatMarkdown(text) {
+                // Handle Headings (### Title)
+                let lines = text.split('\n');
+                let formattedLines = lines.map(line => {
+                    let trimmed = line.trim();
+                    if (trimmed.startsWith('### ')) {
+                        return `<h3 style="font-family: 'Playfair Display', serif; color: var(--primary-dark); font-size: 1.15rem; margin-top: 0.8rem; margin-bottom: 0.4rem; border-bottom: 1px solid rgba(197, 160, 89, 0.15); padding-bottom: 0.25rem;">${trimmed.substring(4)}</h3>`;
+                    }
+                    if (trimmed.startsWith('#### ')) {
+                        return `<h4 style="font-family: 'Playfair Display', serif; color: var(--primary-dark); font-size: 1rem; margin-top: 0.6rem; margin-bottom: 0.2rem;">${trimmed.substring(5)}</h4>`;
+                    }
+                    if (trimmed.startsWith('* ') || trimmed.startsWith('- ')) {
+                        return `<li style="margin-left: 1.25rem; margin-bottom: 0.35rem; list-style-type: square; color: var(--text-main);">${trimmed.substring(2)}</li>`;
+                    }
+                    return line;
+                });
+                
+                let formatted = formattedLines.join('\n');
+
+                // Convert **bold**
+                formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                
+                // Convert *italic*
+                formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
+                
+                // Convert linebreaks to <br>
+                formatted = formatted.replace(/\n/g, '<br>');
+                
+                return formatted;
+            }
         });
     </script>
 </body>
